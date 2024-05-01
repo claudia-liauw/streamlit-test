@@ -2,40 +2,35 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout='wide')
-st.title('Plot polynomial graph')
-col1, col2, col3 = st.columns([1, 1, 2], gap='medium')
+st.title('Compounding interest calculator')
+col1, col2 = st.columns([1, 2], gap='medium')
 
 with col1:
-    st.header('Inputs')
-    min_x = st.number_input('Lower bound x', value=-5)
-    max_x = st.number_input('Upper bound x', value=5)
-    power = st.slider('Degree of polynomial', 1, 3)
-
-
-with col2:
-    st.header('Coefficients')
-    x0 = st.number_input('Intercept', value=0)
-    x1 = st.number_input('$x$', value=0)
-    x2 = 0
-    x3 = 0
-    if power > 1:
-        x2 = st.number_input('$x^2$', value=0)
-    if power == 3:
-        x3 = st.number_input('$x^3$', value=0)
-    
-    st.text('')
-    clicked = st.button('Draw!')
-
-    x = np.linspace(min_x, max_x, 100)
-    y = x0 + x1*x + x2*x**2 + x3*x**3
+    amount = st.number_input('Principal amount', min_value=0)
+    ir = st.number_input('Interest rate (% p.a.)', value=np.nan, min_value=0., max_value=100.)*0.01
+    monthly = st.number_input('Monthly contributions', min_value=0)
+    interval = st.radio('Preferred unit of time', ['Months', 'Years'])
+    if interval == 'Months':
+        time_input = st.number_input('Holding time (months)', min_value=0)
+        time = time_input
+    elif interval == 'Years':
+        time_input = st.number_input('Holding time (years)', min_value=0)
+        time = time_input*12
+    clicked = st.button('Calculate')
 
 if clicked:
-    fig, ax = plt.subplots()
-    ax.plot(x, y)
-    ax.axhline(0, color='grey', linewidth=.5)
-    ax.axvline(0, color='grey', linewidth=.5)
+    with col2:
+        amount_list = [amount]
+        for i in range(time):
+            amount = (amount + monthly)*(1+ir/12)
+            amount_list.append(amount)
+        st.markdown(f'**Amount after {time_input} {interval}**: ${amount:.2f}')
 
-    with col3:
-        st.header('Graph')
+        fig, ax = plt.subplots()
+        if interval == 'Months':
+            ax.plot(range(time+1), amount_list, marker='o')
+        else:
+            ax.plot(range(time_input+1), amount_list[::12], marker='o')
+        ax.set_xlabel(interval)
+        ax.set_title('Amount over time')
         st.pyplot(fig)
